@@ -1,7 +1,9 @@
 
 #include "BoundingSphere.h"
 #include <cstring>
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 #include "omp.h"
+#endif
 
 template<typename HullType> void
 KDTree<HullType>::construct()
@@ -121,7 +123,7 @@ KDTree<HullType>::traverse_breadth_first_parallel(TraversalPredicate pred,
 	TraversalCallback cb) const
 {
 	auto start_nodes = std::vector<QueueItem>{};
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(DEMOS_SIMULATION_WITH_OPENMP)
 	const unsigned int maxThreads = 1;
 #else
 	const unsigned int maxThreads = omp_get_max_threads();
@@ -145,16 +147,20 @@ KDTree<HullType>::traverse_breadth_first_parallel(TraversalPredicate pred,
 		}
 		);
 
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
+		#pragma omp for schedule(static)
+#endif
 		for (int i = 0; i < start_nodes.size(); i++)
 		{
 			QueueItem const& qi = start_nodes[i];
 			cb(qi.n, qi.d);
 			traverse_depth_first(qi.n, qi.d, pred, cb, nullptr);
 		}
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 	}
+#endif
 }
 
 template <typename HullType> unsigned int

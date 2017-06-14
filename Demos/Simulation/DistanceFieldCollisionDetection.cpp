@@ -1,6 +1,8 @@
 #include "DistanceFieldCollisionDetection.h"
 #include "Demos/Simulation/IDFactory.h"
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 #include "omp.h"
+#endif
 
 using namespace PBD;
 
@@ -46,17 +48,19 @@ void DistanceFieldCollisionDetection::collisionDetection(SimulationModel &model)
 
 	//omp_set_num_threads(1);
 	std::vector<std::vector<ContactData> > contacts_mt;	
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(DEMOS_SIMULATION_WITH_OPENMP)
 	const unsigned int maxThreads = 1;
 #else
-	const unsigned int maxThreads = omp_get_max_threads();
+		const unsigned int maxThreads = omp_get_max_threads();
 #endif
 	contacts_mt.resize(maxThreads);
 
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 	#pragma omp parallel default(shared)
 	{
 		// Update BVHs
-		#pragma omp for schedule(static)  
+		#pragma omp for schedule(static)
+#endif
 		for (int i = 0; i < (int)m_collisionObjects.size(); i++)
 		{
 			CollisionDetection::CollisionObject *co = m_collisionObjects[i];
@@ -72,7 +76,9 @@ void DistanceFieldCollisionDetection::collisionDetection(SimulationModel &model)
 			}
 		}
 
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 		#pragma omp for schedule(static)
+#endif
 		for (int i = 0; i < (int)coPairs.size(); i++)
 		{
 			std::pair<unsigned int, unsigned int> &coPair = coPairs[i];
@@ -125,7 +131,9 @@ void DistanceFieldCollisionDetection::collisionDetection(SimulationModel &model)
 					);
 			}
 		}
+#ifdef DEMOS_SIMULATION_WITH_OPENMP
 	}
+#endif
 	for (unsigned int i = 0; i < contacts_mt.size(); i++)
 	{
 		for (unsigned int j = 0; j < contacts_mt[i].size(); j++)
@@ -211,7 +219,7 @@ void DistanceFieldCollisionDetection::collisionDetectionRigidBodies(RigidBody *r
 				const Vector3r cp_w = R.transpose() * cp + v2;
 				const Vector3r n_w = R.transpose() * n;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(DEMOS_SIMULATION_WITH_OPENMP)
 				int tid = 0;
 #else
 				int tid = omp_get_thread_num();
@@ -290,7 +298,7 @@ void DistanceFieldCollisionDetection::collisionDetectionRBSolid(const ParticleDa
 				const Vector3r cp_w = R.transpose() * cp + v2;
 				const Vector3r n_w = R.transpose() * n;
 
-#ifdef _DEBUG
+#if defined(_DEBUG) || !defined(DEMOS_SIMULATION_WITH_OPENMP)
 				int tid = 0;
 #else
 				int tid = omp_get_thread_num();

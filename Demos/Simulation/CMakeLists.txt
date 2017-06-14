@@ -1,3 +1,10 @@
+option(DEMOS_SIMULATION_WITH_OPENMP "Activate the usage of OpenMP for the simulation demos." ON)
+
+if (${DEMOS_SIMULATION_WITH_OPENMP})
+    add_definitions(-DDEMOS_SIMULATION_WITH_OPENMP)
+    message("DEMOS_SIMULATION_WITH_OPENMP=${DEMOS_SIMULATION_WITH_OPENMP}")
+endif ()
+
 add_library(Simulation
 		AABB.h
 		CollisionDetection.cpp
